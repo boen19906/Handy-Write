@@ -14,7 +14,10 @@ import fitz  # PyMuPDF
 from openai import OpenAI
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "YOUR_API_KEY_HERE")
+from dotenv import load_dotenv
+load_dotenv()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+#os.environ.get("OPENAI_API_KEY", "YOUR_API_KEY_HERE")
 FONT_PATH      = "Caveat-VariableFont_wght.ttf"
 
 PAGE_W, PAGE_H      = 2550, 3300   # 300dpi letter (8.5x11in)
