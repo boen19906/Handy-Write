@@ -14,10 +14,7 @@ import fitz  # PyMuPDF
 from openai import OpenAI
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
-from dotenv import load_dotenv
-load_dotenv()
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-#os.environ.get("OPENAI_API_KEY", "YOUR_API_KEY_HERE")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "YOUR_API_KEY_HERE")
 FONT_PATH      = "Caveat-VariableFont_wght.ttf"
 
 PAGE_W, PAGE_H      = 2550, 3300   # 300dpi letter (8.5x11in)
@@ -692,7 +689,7 @@ def progress():
         last = None
         for _ in range(300):
             cur = dict(progress_data)
-            if cur != last:
+            if cur != last and cur.get("step", -1) >= 0:
                 yield f"data: {json.dumps(cur)}\n\n"
                 last = dict(cur)
             time.sleep(0.3)
@@ -733,7 +730,7 @@ def generate():
             return jsonify({"error": "Could not extract text from PDF (might be scanned/image-based)"}), 400
 
         # Step 2: GPT
-        set_progress(1, "Sending to GPT-4o...")
+        set_progress(1, "Sending to GPT...")
         notes = generate_notes(raw_text)
 
         # Step 3: Render
@@ -741,10 +738,13 @@ def generate():
         pages_b64 = render_notes_to_b64(notes)
 
         set_progress(3, "Done!")
-        return jsonify({"pages": pages_b64})
+        result = jsonify({"pages": pages_b64})
+        set_progress(-1, "")  # reset so fresh page loads don't show stale state
+        return result
 
     except Exception as e:
         traceback.print_exc()
+        set_progress(-1, "")  # reset on error too
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
@@ -752,4 +752,4 @@ if __name__ == "__main__":
     print(f"Font: {FONT_PATH}")
     if OPENAI_API_KEY == "YOUR_API_KEY_HERE":
         print("WARNING: Set your OpenAI API key in app.py or via OPENAI_API_KEY env var")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=True, port=5000)
