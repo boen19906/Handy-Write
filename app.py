@@ -752,4 +752,4 @@ if __name__ == "__main__":
     print(f"Font: {FONT_PATH}")
     if OPENAI_API_KEY == "YOUR_API_KEY_HERE":
         print("WARNING: Set your OpenAI API key in app.py or via OPENAI_API_KEY env var")
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
