@@ -7,8 +7,8 @@ Requires: pip install flask openai PyMuPDF Pillow
 Put Caveat-VariableFont_wght.ttf in the same folder.
 """
 
-import os, random, math, io, base64, traceback
-from flask import Flask, request, jsonify, render_template_string
+import os, random, math, io, base64, traceback, secrets
+from flask import Flask, request, jsonify, render_template_string, session
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import fitz  # PyMuPDF
 from openai import OpenAI
@@ -43,7 +43,20 @@ WORD_SPACING_JITTER = 6
 # ── FONT HELPERS ──────────────────────────────────────────────────────────────
 
 # Characters known to be missing or broken in Biro Script — always use Caveat
-BIRO_MISSING = set("()-+=/\\[]{}|^~`@#$%&*<>0123456789gf")
+# Includes: punctuation, operators, brackets, numbers, Greek letters, math symbols
+BIRO_MISSING = set(
+    "()-+=/\\[]{}|^~`@#$%&*<>0123456789gf"
+    "αβγδεζηθικλμνξοπρστυφχψω"  # Greek lowercase
+    "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"  # Greek uppercase
+    "±×÷≈≠≤≥∞∑∏∫∂√∆°′″"        # Math symbols
+    "¢£¥€¤"                     # Currency symbols
+    "©®™"                       # Special symbols
+    "¡¿"                        # Inverted punctuation
+    "«»‹›""''"                  # Quotation marks
+    "–—"                        # Dashes
+    "†‡§¶"                      # Reference marks
+    "•·‣⁃"                      # Bullets
+)
 
 def _pick_font(char, base_size, force_fallback=False):
     """Return the best ImageFont for this character at this size."""
@@ -482,13 +495,24 @@ Lecture content:
 # ── FLASK APP ─────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+
+# Store progress per session ID
+progress_store = {}
+
+def set_progress(step, msg):
+    """Update progress for the current session"""
+    session_id = session.get('session_id')
+    if session_id:
+        progress_store[session_id] = {"step": step, "msg": msg}
+        print(f"[Progress] Session {session_id[:8]}: step={step}, msg={msg}")  # Debug log
 
 HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Turn any lecture PDF, PowerPoint, or photo into realistic handwritten notes instantly. AI-powered summarization with authentic handwriting rendering.">
+<meta name="description" content="Turn any lecture or textbook PDF, PowerPoint, or photo into realistic handwritten notes instantly. AI-powered summarization with authentic handwriting rendering.">
 <meta name="keywords" content="handwritten notes generator, lecture notes, PDF to handwritten notes, study notes, AI notes, handwriting converter">
 <meta name="robots" content="index, follow">
 <meta name="author" content="HandyWrite">
@@ -1391,6 +1415,14 @@ HTML = """<!DOCTYPE html>
 </section>
 
 <script>
+  // Store session ID
+  let SESSION_ID = null;
+
+  // Get session ID from server on page load
+  fetch('/get_session')
+    .then(r => r.json())
+    .then(data => { SESSION_ID = data.session_id; });
+
   // ── Landing → Tool transition ──
   const ctaBtn       = document.getElementById('ctaBtn');
   const landingSection = document.getElementById('landingSection');
@@ -1468,7 +1500,7 @@ HTML = """<!DOCTYPE html>
     fileNameDisplay.classList.add('visible');
     generateBtn.disabled = false;
     setStatus('');
-    setSteps(-1);
+    setProgress(null);
   }
 
   function setStatus(msg, isError = false) {
@@ -1601,40 +1633,64 @@ HTML = """<!DOCTYPE html>
   }
 
   // SSE progress — drives button text and loading bar through stages
-  const evtSource = new EventSource('/progress');
-  evtSource.onmessage = e => {
-    const d = JSON.parse(e.data);
-    if (d.step === 0) { setBtnStage('extracting'); setProgress('extracting'); }
-    else if (d.step === 1) { setBtnStage('generating'); setProgress('generating'); }
-    else if (d.step === 2) { setBtnStage('rendering');  setProgress('rendering'); }
-  };
+  let evtSource = null;
+  
+  function startProgressListener() {
+    if (!SESSION_ID) {
+      setTimeout(startProgressListener, 100);
+      return;
+    }
+    
+    evtSource = new EventSource('/progress?session_id=' + SESSION_ID);
+    evtSource.onmessage = e => {
+      const d = JSON.parse(e.data);
+      if (d.step === 0) { setBtnStage('extracting'); setProgress('extracting'); }
+      else if (d.step === 1) { setBtnStage('generating'); setProgress('generating'); }
+      else if (d.step === 2) { setBtnStage('rendering');  setProgress('rendering'); }
+    };
+  }
+  
+  startProgressListener();
 </script>
 </body>
 </html>"""
 
-progress_data = {"step": -1, "msg": ""}
-
-def set_progress(step, msg):
-    progress_data["step"] = step
-    progress_data["msg"]  = msg
-
 @app.route("/")
 def index():
+    # Create a unique session ID for each user
+    if 'session_id' not in session:
+        session['session_id'] = secrets.token_hex(16)
     return render_template_string(HTML)
+
+@app.route("/get_session")
+def get_session():
+    """Return the current session ID to the frontend"""
+    if 'session_id' not in session:
+        session['session_id'] = secrets.token_hex(16)
+    return jsonify({"session_id": session['session_id']})
 
 @app.route("/progress")
 def progress():
+    # Capture session_id BEFORE entering the generator (while request context is active)
+    session_id = request.args.get('session_id')
+    
     def stream():
         import json, time
+        if not session_id:
+            return
+        
         last = None
-        for _ in range(300):
-            cur = dict(progress_data)
+        for _ in range(600):  # Increased iterations
+            cur = progress_store.get(session_id, {"step": -1, "msg": ""})
             if cur != last and cur.get("step", -1) >= 0:
                 yield f"data: {json.dumps(cur)}\n\n"
                 last = dict(cur)
-            time.sleep(0.3)
+            time.sleep(0.1)  # Faster polling - 100ms instead of 300ms
     from flask import Response
-    return Response(stream(), mimetype="text/event-stream")
+    return Response(stream(), mimetype="text/event-stream", headers={
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no'
+    })
 
 @app.route("/download", methods=["POST"])
 def download():
@@ -1656,6 +1712,7 @@ def download():
 @app.route("/generate", methods=["POST"])
 def generate():
     try:
+        import time
         uploaded = request.files.get("pdf")
         if not uploaded:
             return jsonify({"error": "No file uploaded"}), 400
@@ -1666,17 +1723,21 @@ def generate():
         custom_instr = request.form.get("instructions", "").strip()
 
         set_progress(0, "Extracting content...")
+        time.sleep(0.5)  # Increased delay for visibility
         file_bytes = uploaded.read()
         raw_text   = extract_from_upload(file_bytes, filename)
 
         set_progress(1, "Generating with LLM...")
+        time.sleep(0.5)  # Increased delay for visibility
         notes = generate_notes(raw_text, detail=detail, custom_instructions=custom_instr)
 
         set_progress(2, "Rendering handwritten pages...")
+        time.sleep(0.5)  # Increased delay for visibility
         pages_b64 = render_notes_to_b64(notes, messiness=messiness)
 
         set_progress(3, "Done!")
         result = jsonify({"pages": pages_b64})
+        time.sleep(0.3)
         set_progress(-1, "")
         return result
 
