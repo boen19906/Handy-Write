@@ -43,7 +43,7 @@ WORD_SPACING_JITTER = 6
 # ── FONT HELPERS ──────────────────────────────────────────────────────────────
 
 # Characters known to be missing or broken in Biro Script — always use Caveat
-BIRO_MISSING = set("()-+=/\\[]{}|^~`@#$%&*<>0123456789")
+BIRO_MISSING = set("()-+=/\\[]{}|^~`@#$%&*<>0123456789gf")
 
 def _pick_font(char, base_size, force_fallback=False):
     """Return the best ImageFont for this character at this size."""
@@ -226,15 +226,15 @@ def render_page(lines, rotation=0.2, noise=0.08, size_var=0.02, space_var=0.04):
 
     if title_line:
         title_text = title_line[2:].rstrip()
-        title_y    = FIRST_LINE_Y - HEADING_SIZE + 10
+        title_y    = FIRST_LINE_Y - 20
         tx         = margin + random.randint(-4, 8)
         render_text_line(canvas, title_text, tx, title_y, HEADING_SIZE,
                          rotation=rotation, noise=noise, size_var=size_var, space_var=space_var)
         # Body starts on the second ruled line (title lives above the rules)
-        y = FIRST_LINE_Y + LINE_SPACING + 4
+        y = FIRST_LINE_Y + LINE_SPACING * 2 + 4
     else:
         # No title — skip the title gap, start on the second ruled line
-        y = FIRST_LINE_Y + LINE_SPACING + 4
+        y = FIRST_LINE_Y + LINE_SPACING * 2 + 4
 
     i = start_i
     while i < len(lines):
@@ -488,7 +488,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HandyWrite — Lecture Notes to Handwritten</title>
+<title>HandyWrite — Turn Lectures into Handwritten Notes</title>
 <link rel="icon" type="image/png" href="/static/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -1041,6 +1041,203 @@ HTML = """<!DOCTYPE html>
     border: 1px solid rgba(74,127,212,0.15);
   }
 
+  /* ── LANDING PAGE ── */
+  .landing {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px 80px;
+    text-align: center;
+  }
+
+  .landing-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid rgba(74,127,212,0.35);
+    padding: 4px;
+    box-shadow: 0 0 32px rgba(74,127,212,0.25), 0 0 80px rgba(74,127,212,0.08);
+    animation: float 4s ease-in-out infinite;
+    margin-bottom: 28px;
+  }
+
+  .landing h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(2.8rem, 7vw, 4.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--cream);
+    line-height: 1.08;
+  }
+
+  .landing h1 em {
+    font-style: italic;
+    color: var(--accent-bright);
+  }
+
+  .landing-tagline {
+    margin-top: 18px;
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    font-weight: 300;
+    color: var(--text-muted);
+    max-width: 480px;
+    line-height: 1.6;
+  }
+
+  .landing-tagline strong {
+    color: var(--text-main);
+    font-weight: 400;
+  }
+
+  /* Feature pills row */
+  .features {
+    display: flex;
+    gap: 12px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 560px;
+  }
+
+  .feature-card {
+    background: rgba(30, 52, 80, 0.5);
+    border: 1px solid rgba(74,127,212,0.18);
+    border-radius: 12px;
+    padding: 16px 20px;
+    text-align: left;
+    width: 160px;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(74,127,212,0.4);
+  }
+
+  .feature-icon { font-size: 1.4rem; margin-bottom: 8px; display: block; }
+
+  .feature-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.88rem;
+    font-weight: 400;
+    color: var(--cream);
+    margin-bottom: 4px;
+  }
+
+  .feature-card p {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  /* CTA button */
+  .cta-btn {
+    margin-top: 48px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 36px;
+    background: linear-gradient(135deg, var(--royal) 0%, var(--ink-blue) 100%);
+    color: var(--cream);
+    border: 1px solid rgba(74,127,212,0.5);
+    border-radius: 999px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 4px 24px rgba(28,63,143,0.35);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(28,63,143,0.55), 0 0 0 1px rgba(74,127,212,0.6);
+  }
+
+  .cta-arrow {
+    font-size: 1rem;
+    transition: transform 0.3s;
+  }
+
+  .cta-btn:hover .cta-arrow { transform: translateX(4px); }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: fadeInUp 1s ease 1s both;
+  }
+
+  .scroll-hint .chevron {
+    width: 16px;
+    height: 16px;
+    border-right: 1.5px solid var(--text-dim);
+    border-bottom: 1.5px solid var(--text-dim);
+    transform: rotate(45deg);
+    animation: bounce 1.5s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: rotate(45deg) translateY(0); }
+    50%       { transform: rotate(45deg) translateY(4px); }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  /* ── TOOL SECTION ── */
+  .tool-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 0 80px;
+  }
+
+  .tool-section-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .tool-section-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--cream);
+  }
+
+  .tool-section-header p {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
   /* ── MISC ── */
   .hidden { display: none !important; }
 
@@ -1053,12 +1250,52 @@ HTML = """<!DOCTYPE html>
 </head>
 <body>
 
-<!-- Hero -->
-<div class="hero">
-  <img src="/static/favicon.png" alt="HandyWrite" class="logo-mark" onerror="this.style.display='none'">
+<!-- ═══ LANDING PAGE ═══ -->
+<section class="landing" id="landingSection">
+  <img src="/static/favicon.png" alt="HandyWrite" class="landing-logo" onerror="this.style.display='none'">
+
   <h1>Handy<em>Write</em></h1>
-  <p class="hero-sub">Drop in your lecture. Get back real handwritten notes.</p>
-</div>
+  <p class="landing-tagline">
+    Drop in any lecture — PDF, slides, or photo.<br>
+    Get back <strong>real handwritten notes</strong> in seconds.
+  </p>
+
+  <div class="features">
+    <div class="feature-card">
+      <span class="feature-icon">📄</span>
+      <h3>Any Format</h3>
+      <p>PDF, PPTX, or a photo of your slides</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🤖</span>
+      <h3>AI-Summarised</h3>
+      <p>GPT distills the key ideas for you</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">✍️</span>
+      <h3>Handwritten</h3>
+      <p>Rendered on real lined paper, printable</p>
+    </div>
+  </div>
+
+  <button class="cta-btn" id="ctaBtn">
+    Try it out
+    <span class="cta-arrow">→</span>
+  </button>
+
+  <div class="scroll-hint">
+    <span>scroll</span>
+    <div class="chevron"></div>
+  </div>
+</section>
+
+<!-- ═══ TOOL SECTION ═══ -->
+<section class="tool-section hidden" id="toolSection">
+
+  <div class="tool-section-header">
+    <h2>Generate Your Notes</h2>
+    <p>Upload a lecture file and let HandyWrite do the rest</p>
+  </div>
 
 <!-- Main card -->
 <div class="card">
@@ -1120,7 +1357,31 @@ HTML = """<!DOCTYPE html>
 
 <div class="pages hidden" id="pagesContainer"></div>
 
+</section>
+
 <script>
+  // ── Landing → Tool transition ──
+  const ctaBtn       = document.getElementById('ctaBtn');
+  const landingSection = document.getElementById('landingSection');
+  const toolSection  = document.getElementById('toolSection');
+
+  ctaBtn.addEventListener('click', () => {
+    landingSection.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    landingSection.style.opacity    = '0';
+    landingSection.style.transform  = 'translateY(-20px)';
+    setTimeout(() => {
+      landingSection.classList.add('hidden');
+      toolSection.classList.remove('hidden');
+      toolSection.style.opacity   = '0';
+      toolSection.style.transform = 'translateY(20px)';
+      toolSection.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        toolSection.style.opacity   = '1';
+        toolSection.style.transform = 'translateY(0)';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }));
+    }, 380);
+  });
   const fileInput       = document.getElementById('fileInput');
   const dropZone        = document.getElementById('dropZone');
   const fileNameEl      = document.getElementById('fileName');
