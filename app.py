@@ -1521,6 +1521,7 @@ HTML = """<!DOCTYPE html>
   generateBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
     generateBtn.disabled = true;
+    isGenerating = true;  // Mark that THIS user is generating
     setBtnStage('extracting');
     setProgress('extracting');
     pagesContainer.classList.add('hidden');
@@ -1547,6 +1548,7 @@ HTML = """<!DOCTYPE html>
     } finally {
       generateBtn.disabled = false;
       setBtnStage('done');
+      isGenerating = false;  // Done generating
       // fade bar out after a moment on success
       setTimeout(() => setProgress(null), 800);
     }
@@ -1634,6 +1636,7 @@ HTML = """<!DOCTYPE html>
 
   // SSE progress — drives button text and loading bar through stages
   let evtSource = null;
+  let isGenerating = false;  // Track if THIS user is generating
   
   function startProgressListener() {
     if (!SESSION_ID) {
@@ -1643,6 +1646,9 @@ HTML = """<!DOCTYPE html>
     
     evtSource = new EventSource('/progress?session_id=' + SESSION_ID);
     evtSource.onmessage = e => {
+      // ONLY update UI if THIS user is actively generating
+      if (!isGenerating) return;
+      
       const d = JSON.parse(e.data);
       if (d.step === 0) { setBtnStage('extracting'); setProgress('extracting'); }
       else if (d.step === 1) { setBtnStage('generating'); setProgress('generating'); }
