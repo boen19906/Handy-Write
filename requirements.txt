@@ -2,4 +2,4 @@ flask
 openai
 PyMuPDF
 Pillow
-python-dotenv
+python-pptx
