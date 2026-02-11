@@ -488,7 +488,34 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HandyWrite — Turn Lectures into Handwritten Notes</title>
+<meta name="description" content="Turn any lecture PDF, PowerPoint, or photo into realistic handwritten notes instantly. AI-powered summarization with authentic handwriting rendering.">
+<meta name="keywords" content="handwritten notes generator, lecture notes, PDF to handwritten notes, study notes, AI notes, handwriting converter">
+<meta name="robots" content="index, follow">
+<meta name="author" content="HandyWrite">
+
+<!-- Open Graph (for social sharing previews) -->
+<meta property="og:title" content="HandyWrite — Turn Lectures into Handwritten Notes">
+<meta property="og:description" content="Drop in any lecture PDF or slides. Get back real handwritten notes in seconds.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://handywrite.online">
+<meta property="og:image" content="https://handywrite.online/static/preview.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "HandyWrite",
+  "description": "Convert lecture PDFs, PowerPoints, and images into handwritten student notes using AI",
+  "url": "https://yoursite.com",
+  "applicationCategory": "EducationApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0"
+  }
+}
+</script>
+
+<title>HandyWrite — Convert Lecture PDFs to Handwritten Notes | AI Study Tool</title>
 <link rel="icon" type="image/png" href="/static/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
