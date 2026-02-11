@@ -495,7 +495,7 @@ HTML = """<!DOCTYPE html>
 
 <!-- Open Graph (for social sharing previews) -->
 <meta property="og:title" content="HandyWrite — Turn Lectures into Handwritten Notes">
-<meta property="og:description" content="Drop in any lecture PDF or slides. Get back real handwritten notes in seconds.">
+<meta property="og:description" content="Drop in any lecture PDF or slides. Generate real handwritten notes in seconds.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://handywrite.online">
 <meta property="og:image" content="https://handywrite.online/static/preview.png">
