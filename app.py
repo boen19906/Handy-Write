@@ -1241,6 +1241,10 @@ HTML = """<!DOCTYPE html>
   /* ── MISC ── */
   .hidden { display: none !important; }
 
+  @media (max-width: 600px) {
+    .features { display: none; }
+  }
+
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--navy); }
@@ -1269,7 +1273,7 @@ HTML = """<!DOCTYPE html>
     <div class="feature-card">
       <span class="feature-icon">🤖</span>
       <h3>AI-Summarised</h3>
-      <p>GPT distills the key ideas for you</p>
+      <p>LLM distills the key ideas for you</p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">✍️</span>
@@ -1638,7 +1642,7 @@ def generate():
         file_bytes = uploaded.read()
         raw_text   = extract_from_upload(file_bytes, filename)
 
-        set_progress(1, "Sending to GPT...")
+        set_progress(1, "Generating with LLM...")
         notes = generate_notes(raw_text, detail=detail, custom_instructions=custom_instr)
 
         set_progress(2, "Rendering handwritten pages...")
